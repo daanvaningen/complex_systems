@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import random
 
 class HighWay:
@@ -12,7 +13,8 @@ class HighWay:
 		self.carsPassed = 0		# Keeps track of the number of cars passed
 		self.all_cars = 0 		# Keeps track of the number of cars total.
 		self.sum_of_iterations = 0 		# This is the sum of the iterations a car stays in the system. Will be divided by number of cars that passed the system later.
-		# self.populate_road()
+
+		self.populate_road()
 
 	def populate_road(self):
 		for i in range(self.lanes):
@@ -94,12 +96,9 @@ class HighWay:
 
 	def run(self):
 		for self.tic in range(self.iterations):
-			self.new_flow_of_cars()
 			if len(self.cars) != 0:
 				next_car = random.choice(self.cars)
 				self.action(next_car)
-
-
 
 		self.visualized_road = self.visualize_road()
 		return self.visualized_road
@@ -111,9 +110,14 @@ class Car:
 		self.begin = start_iteration
 
 if __name__ == "__main__":
-	highWay = HighWay(3, 10, 0.05, 1000)
+	highWay = HighWay(3, 30, 0.30, 1000000)
 	ending = highWay.run()
 	Succesfullcars = highWay.carsPassed
+
+	plt.imshow(ending)
+	plt.title("Highway on last iteration, yellow = car")
+	plt.show()
+
 
 	print("The state after all iterations was: ")
 	print(ending)
