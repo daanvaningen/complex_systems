@@ -109,18 +109,35 @@ class Car:
 		self.ypos = ypos
 		self.begin = start_iteration
 
+def Analysis_of_density(lanes, length, iterations):
+	density_levels = [i/100.0 for i in range(1,101)]
+	average_duration = []
+	for density in density_levels:
+		durations = []
+		for iter in range(30):
+			highWay = HighWay(lanes, length, density, iterations)
+			highWay.run()
+			if highWay.carsPassed != 0:
+				durations.append(int(highWay.sum_of_iterations/highWay.carsPassed))
+			else:
+				durations.append(0)
+
+		average_duration.append(np.mean(durations))
+
+	cars_in_system = [density*lanes*length for density in density_levels]
+
+	return cars_in_system, average_duration
+
 if __name__ == "__main__":
-	highWay = HighWay(3, 30, 0.30, 1000000)
-	ending = highWay.run()
-	Succesfullcars = highWay.carsPassed
+	lanes, length, density, iterations = 3, 30, 0.3, 50000
 
-	plt.imshow(ending)
-	plt.title("Highway on last iteration, yellow = car")
+	size3 = Analysis_of_density(3, length, iterations)
+	size4 = Analysis_of_density(4, length, iterations)
+
+	plt.plot(size3[0],size3[1], label = "Highway size = 3")
+	plt.plot(size4[0],size4[1], label = "Highway size = 4")
+	plt.xlabel("Cars in the system")
+	plt.ylabel("Average duration for passage")
+	plt.legend()
+	plt.title("Time to pass the highway for number of vehicles")
 	plt.show()
-
-
-	print("The state after all iterations was: ")
-	print(ending)
-	print("-----")
-	print("The number of cars that passed: ", int(Succesfullcars/float(highWay.all_cars)*100.0), "percent")
-	print("Average duration of passage ", int(highWay.sum_of_iterations/Succesfullcars), " Iterations")
