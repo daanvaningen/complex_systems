@@ -13,8 +13,8 @@ class HighWay:
 		self.carsPassed = 0		# Keeps track of the number of cars passed
 		self.all_cars = 0 		# Keeps track of the number of cars total.
 		self.sum_of_iterations = 0 		# This is the sum of the iterations a car stays in the system. Will be divided by number of cars that passed the system later.
-
 		self.populate_road()
+		self.n_blocks = 0  # number of times a car is blocked
 
 	def populate_road(self):
 		for i in range(self.lanes):
@@ -84,6 +84,7 @@ class HighWay:
 					next_car.ypos += 1
 					return
 				else:
+					self.n_blocks += 1
 					return
 
 	def new_flow_of_cars(self):
@@ -97,8 +98,9 @@ class HighWay:
 	def run(self):
 		for self.tic in range(self.iterations):
 			if len(self.cars) != 0:
-				next_car = random.choice(self.cars)
-				self.action(next_car)
+				for next_car in np.random.choice(self.cars,len(self.cars),replace=False):
+					self.action(next_car)
+				self.new_flow_of_cars()
 
 		self.visualized_road = self.visualize_road()
 		return self.visualized_road
@@ -127,10 +129,25 @@ def Analysis_of_density(lanes, length, iterations):
 	cars_in_system = [density*lanes*length for density in density_levels]
 
 	return cars_in_system, average_duration
+	
+def analyze_blocking(lanes, length, iterations):
+	# count number of times cars are blocked
+	blocks = []
+	densities = np.linspace(0.01, 1, 30)
+	for p in densities:
+		highWay = HighWay(lanes, length, p, iterations)
+		highWay.run()
+		blocks.append(highWay.n_blocks)		
+	plt.plot(densities,blocks)
+	plt.xlabel("Density")
+	plt.ylabel("# Cars blocked")
+	plt.show()
 
 if __name__ == "__main__":
-	lanes, length, density, iterations = 3, 30, 0.3, 50000
-
+		
+	lanes, length, density, iterations = 3, 30, 0.3, 10000
+	analyze_blocking(lanes, length, iterations)
+	
 	size3 = Analysis_of_density(3, length, iterations)
 	size4 = Analysis_of_density(4, length, iterations)
 
