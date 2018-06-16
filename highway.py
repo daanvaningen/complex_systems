@@ -51,6 +51,9 @@ class HighWay:
 		print visualized_road
 
 	def action(self, car):
+		''' Remove the car from the system if it is at the end of the track,
+			otherwise try to move the car forward
+		'''
 		if car.y == self.length -1: # End of track
 			self.road[car.x, car.y] = None
 			self.removed_cars.append(car)
@@ -106,6 +109,8 @@ class Car:
 		self.blocks = 0
 
 	def get_possible_next_positions(self, highway):
+		''' Returns an array with [x,y] pairs of possible next positions to move
+		'''
 		positions = []
 
 		# Front
