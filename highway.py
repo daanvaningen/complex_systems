@@ -1,135 +1,155 @@
+'''
+Complex Systems 2018
+
+Program that simulates traffic on a highway
+
+Authors:
+	Mauricio Fonseca Fernandez
+	Berend Nannes
+	Sam Ferwerda
+	Daan van Ingen
+'''
+
 import numpy as np
 import matplotlib.pyplot as plt
 import random
+from tqdm import tqdm
 
 class HighWay:
-	def __init__(self, lanes, length, density, iterations):
+	def __init__(self, lanes, length, density, max_iterations):
 		self.lanes = lanes
 		self.length = length
 		self.road = np.empty((lanes, length), dtype=object)
 		self.density = density
 		self.cars = []				# List of all cars on the road
-		self.iterations = iterations	# Max iterations
-		self.carsPassed = 0		# Keeps track of the number of cars passed
-		self.all_cars = 0 		# Keeps track of the number of cars total.
-		self.sum_of_iterations = 0 		# This is the sum of the iterations a car stays in the system. Will be divided by number of cars that passed the system later.
+		self.removed_cars = []		# list of all removed cars
+		self.max_iterations = max_iterations	# Max iterations
 		self.populate_road()
 		self.n_blocks = 0  # number of times a car is blocked
 
 	def populate_road(self):
+		''' Populate the road with cars, the number of initial cars depends on the
+			density of the traffic
+		'''
 		for i in range(self.lanes):
 			for j in range(self.length):
 				if(random.random() < self.density):
-					new_car = Car(i,j, 0)
+					new_car = Car(i,j)
 					self.road[i,j] = new_car
 					self.cars.append(new_car)
-					self.all_cars += 1
 
-	# this function returns a matrix with zeros and ones. Every one is a car, such that
-	# we can plot it using imshow.
 	def visualize_road(self):
-		self.visualized_road = np.zeros((self.lanes, self.length))
+		''' prints a matrix with zeros and ones. Every one is a car, such that
+			we can plot it using imshow.
+		'''
+		visualized_road = np.zeros((self.lanes, self.length))
 		for i in range(self.lanes):
 			for j in range(self.length):
-				if type(self.road[i,j]) is Car:
-					self.visualized_road[i,j] = 1
+				if self.road[i,j].__class__.__name__ is 'Car':
+					visualized_road[i,j] = 1
 
-		return self.visualized_road
+		print visualized_road
 
-	def action(self, next_car):
-		i = next_car.xpos
-		j = next_car.ypos
-		if j == self.length -1: # End of track
-			self.road[i,j] = None
-			self.cars.remove(next_car)
-			self.carsPassed += 1
-			self.sum_of_iterations += (self.tic - next_car.begin)
+	def action(self, car):
+		if car.y == self.length -1: # End of track
+			self.road[car.x, car.y] = None
+			self.removed_cars.append(car)
+			self.cars.remove(car)
 
 		else:
-			# If place in front free, go there
-			if type(self.road[i,j+1]) is not Car:
-				self.road[i,j+1] = next_car
-				self.road[i,j] = None
-				next_car.ypos += 1
-				return
-
-			if i == 0:
-				if type(self.road[i+1, j+1]) is not Car:
-					self.road[i+1, j+1] = next_car
-					self.road[i,j] = None
-					next_car.xpos += 1
-					next_car.ypos += 1
-					return
-
-			elif i == self.lanes - 1:
-				if type(self.road[i-1, j+1]) is  not Car:
-					self.road[i-1, j+1] = next_car
-					self.road[i,j] = None
-					next_car.xpos -= 1
-					next_car.ypos += 1
-					return
+			next_positions = car.get_possible_next_positions(self.road)
+			if len(next_positions) == 0:
+				car.blocks += 1
 			else:
-				if type(self.road[i-1, j+1]) is not Car:
-					self.road[i-1, j+1] = next_car
-					self.road[i,j] = None
-					next_car.xpos -= 1
-					next_car.ypos += 1
-					return
-					# Note that this will make sure a car will choose left over rightself.
-
-				elif type(self.road[i+1, j+1]) is not Car:
-					self.road[i+1, j+1] = next_car
-					self.road[i,j] = None
-					next_car.xpos += 1
-					next_car.ypos += 1
-					return
-				else:
-					self.n_blocks += 1
-					return
+				next_x, next_y = next_positions[0][0], next_positions[0][1]
+				self.road[car.x, car.y] = None
+				self.road[next_x, next_y] = car
+				car.x, car.y = next_x, next_y
 
 	def new_flow_of_cars(self):
 		for i in range(self.lanes):
-			if type(self.road[i,0]) is not Car and random.random() < self.density:
-				new_car = Car(i,0, self.tic)
+			if self.road[i,0].__class__.__name__ is not 'Car' and random.random() < self.density:
+				new_car = Car(i,0)
 				self.cars.append(new_car)
 				self.road[i,0] = new_car
-				self.all_cars += 1
+
+	def get_avg_time_of_passed_cars(self):
+		''' Returns the average time cars of the cars that traveled through
+			the system
+		'''
+		if len(self.removed_cars) == 0:
+			return 0
+		return self.get_total_time_passed_cars()/len(self.removed_cars)
+
+	def get_total_time_passed_cars(self):
+		''' Returns the total time of the cars that traveled through the system
+		'''
+		total = 0
+		for i in range(len(self.removed_cars)):
+			total += self.removed_cars[i].get_elapsed_time()
+
+		return total
 
 	def run(self):
-		for self.tic in range(self.iterations):
+		for _ in range(self.max_iterations):
 			if len(self.cars) != 0:
-				for next_car in np.random.choice(self.cars,len(self.cars),replace=False):
-					self.action(next_car)
+				for car in np.random.choice(self.cars,len(self.cars),replace=False):
+					self.action(car)
 				self.new_flow_of_cars()
 
-		self.visualized_road = self.visualize_road()
-		return self.visualized_road
+		# self.visualize_road()
 
 class Car:
-	def __init__(self, xpos, ypos, start_iteration):
-		self.xpos = xpos
-		self.ypos = ypos
-		self.begin = start_iteration
+	def __init__(self, xpos, ypos):
+		self.x = xpos
+		self.y = ypos
+		self.blocks = 0
+
+	def get_possible_next_positions(self, highway):
+		positions = []
+
+		# Front
+		if highway[self.x,self.y+1].__class__.__name__ is not 'Car':
+			positions.append([self.x, self.y+1])
+
+		if self.x == 0:
+			if highway[self.x+1, self.y+1].__class__.__name__ is not 'Car':
+				positions.append([self.x+1, self.y+1])
+
+		elif self.x == highway.shape[0] - 1:
+			if highway[self.x-1, self.y+1].__class__.__name__ is not 'Car':
+				positions.append([self.x-1, self.y+1])
+
+		else:
+			if highway[self.x-1, self.y+1].__class__.__name__ is not 'Car':
+				positions.append([self.x-1, self.y+1])
+
+			elif highway[self.x+1, self.y+1].__class__.__name__ is not 'Car':
+				positions.append([self.x+1, self.y+1])
+
+		return positions
+
+	def get_elapsed_time(self):
+		''' returns the `time` a car spends in the system is the sum of the number of
+			times it could not move forward and its current y position
+		'''
+		return self.blocks + self.y
 
 def Analysis_of_density(lanes, length, iterations):
 	density_levels = [i/100.0 for i in range(1,101)]
 	average_duration = []
-	for density in density_levels:
+	for density in tqdm(density_levels):
 		durations = []
-		for iter in range(30):
+		for iter in range(1):
 			highWay = HighWay(lanes, length, density, iterations)
 			highWay.run()
-			if highWay.carsPassed != 0:
-				durations.append(int(highWay.sum_of_iterations/highWay.carsPassed))
-			else:
-				durations.append(0)
-
+			durations.append(highWay.get_avg_time_of_passed_cars())
 		average_duration.append(np.mean(durations))
 
 	cars_in_system = [density*lanes*length for density in density_levels]
 
 	return cars_in_system, average_duration
-	
+
 def analyze_blocking(lanes, length, iterations):
 	# count number of times cars are blocked
 	blocks = []
@@ -137,17 +157,15 @@ def analyze_blocking(lanes, length, iterations):
 	for p in densities:
 		highWay = HighWay(lanes, length, p, iterations)
 		highWay.run()
-		blocks.append(highWay.n_blocks)		
+		blocks.append(highWay.n_blocks)
 	plt.plot(densities,blocks)
 	plt.xlabel("Density")
 	plt.ylabel("# Cars blocked")
 	plt.show()
 
 if __name__ == "__main__":
-		
 	lanes, length, density, iterations = 3, 30, 0.3, 10000
-	analyze_blocking(lanes, length, iterations)
-	
+
 	size3 = Analysis_of_density(3, length, iterations)
 	size4 = Analysis_of_density(4, length, iterations)
 
