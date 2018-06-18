@@ -70,11 +70,18 @@ class HighWay:
 				car.x, car.y = next_x, next_y
 
 	def new_flow_of_cars(self):
-		for i in range(self.lanes):
-			if self.road[i,0].__class__.__name__ is not 'Car' and random.random() < self.density:
-				new_car = Car(i,0)
-				self.cars.append(new_car)
-				self.road[i,0] = new_car
+		''' Try to add a new car at the beginning of the highway if the density
+			of cars is too low
+		'''
+		# print(len(self.cars))
+		# print(int(self.lanes*self.length*self.density))
+		if len(self.cars) < int(self.lanes*self.length*self.density):
+			for i in range(self.lanes):
+				if self.road[i,0].__class__.__name__ is not 'Car':
+					new_car = Car(i,0)
+					self.cars.append(new_car)
+					self.road[i,0] = new_car
+					break
 
 	def get_avg_time_of_passed_cars(self):
 		''' Returns the average time cars of the cars that traveled through
@@ -93,12 +100,17 @@ class HighWay:
 
 		return total
 
+	def step(self, car):
+		''' Move one car and try to add a new one to the system
+		'''
+		self.action(car)
+		self.new_flow_of_cars()
+
 	def run(self):
 		for _ in range(self.max_iterations):
 			if len(self.cars) != 0:
 				for car in np.random.choice(self.cars,len(self.cars),replace=False):
-					self.action(car)
-				self.new_flow_of_cars()
+					self.step(car)
 			self.occupied.append(len(self.cars)/(self.length*self.lanes))
 		# self.visualize_road()
 
@@ -170,7 +182,7 @@ def analyze_blocking(lanes, length, iterations):
 
 if __name__ == "__main__":
 	lanes, length, density, iterations = 3, 60, 0.99, 10000
-	
+
 	highWay = HighWay(lanes, length, density, iterations)
 	highWay.run()
 	plt.plot(highWay.occupied)
@@ -178,13 +190,13 @@ if __name__ == "__main__":
 	plt.xlabel('iterations')
 	plt.show()
 
-	size3 = Analysis_of_density(3, length, iterations)
-	size4 = Analysis_of_density(4, length, iterations)
-
-	plt.plot(size3[0],size3[1], label = "Highway size = 3")
-	plt.plot(size4[0],size4[1], label = "Highway size = 4")
-	plt.xlabel("Cars in the system")
-	plt.ylabel("Average duration for passage")
-	plt.legend()
-	plt.title("Time to pass the highway for number of vehicles")
-	plt.show()
+	# size3 = Analysis_of_density(3, length, iterations)
+	# size4 = Analysis_of_density(4, length, iterations)
+	#
+	# plt.plot(size3[0],size3[1], label = "Highway size = 3")
+	# plt.plot(size4[0],size4[1], label = "Highway size = 4")
+	# plt.xlabel("Cars in the system")
+	# plt.ylabel("Average duration for passage")
+	# plt.legend()
+	# plt.title("Time to pass the highway for number of vehicles")
+	# plt.show()
