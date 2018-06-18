@@ -25,7 +25,7 @@ class HighWay:
 		self.removed_cars = []		# list of all removed cars
 		self.max_iterations = max_iterations	# Max iterations
 		self.populate_road()
-		self.n_blocks = 0  # number of times a car is blocked
+		self.occupied = []	 # percentage of road occupied
 
 	def populate_road(self):
 		''' Populate the road with cars, the number of initial cars depends on the
@@ -48,7 +48,7 @@ class HighWay:
 				if self.road[i,j].__class__.__name__ is 'Car':
 					visualized_road[i,j] = 1
 
-		print visualized_road
+		return visualized_road
 
 	def action(self, car):
 		''' Remove the car from the system if it is at the end of the track,
@@ -99,7 +99,7 @@ class HighWay:
 				for car in np.random.choice(self.cars,len(self.cars),replace=False):
 					self.action(car)
 				self.new_flow_of_cars()
-
+			self.occupied.append(len(self.cars)/(self.length*self.lanes))
 		# self.visualize_road()
 
 class Car:
@@ -169,7 +169,14 @@ def analyze_blocking(lanes, length, iterations):
 	plt.show()
 
 if __name__ == "__main__":
-	lanes, length, density, iterations = 3, 30, 0.3, 10000
+	lanes, length, density, iterations = 3, 60, 0.99, 10000
+	
+	highWay = HighWay(lanes, length, density, iterations)
+	highWay.run()
+	plt.plot(highWay.occupied)
+	plt.ylabel('% road occupied')
+	plt.xlabel('iterations')
+	plt.show()
 
 	size3 = Analysis_of_density(3, length, iterations)
 	size4 = Analysis_of_density(4, length, iterations)
