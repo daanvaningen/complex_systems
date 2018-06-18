@@ -54,20 +54,14 @@ class HighWay:
 		''' Remove the car from the system if it is at the end of the track,
 			otherwise try to move the car forward
 		'''
-		if car.y == self.length -1: # End of track
-			self.road[car.x, car.y] = None
-			self.removed_cars.append(car)
-			self.cars.remove(car)
-
+		next_positions = car.get_possible_next_positions(self.road)
+		if len(next_positions) == 0:
+			car.blocks += 1
 		else:
-			next_positions = car.get_possible_next_positions(self.road)
-			if len(next_positions) == 0:
-				car.blocks += 1
-			else:
-				next_x, next_y = next_positions[0][0], next_positions[0][1]
-				self.road[car.x, car.y] = None
-				self.road[next_x, next_y] = car
-				car.x, car.y = next_x, next_y
+			next_x, next_y = next_positions[0][0], next_positions[0][1] # We might want to randomise this
+			self.road[car.x, car.y] = None
+			self.road[next_x, next_y] = car
+			car.x, car.y = next_x, next_y
 
 	def new_flow_of_cars(self):
 		''' Try to add a new car at the beginning of the highway if the density
@@ -123,26 +117,29 @@ class Car:
 	def get_possible_next_positions(self, highway):
 		''' Returns an array with [x,y] pairs of possible next positions to move
 		'''
+		x, y = self.x, self.y
+		if(y == highway.shape[1]-1):
+			y = -1
 		positions = []
 
 		# Front
-		if highway[self.x,self.y+1].__class__.__name__ is not 'Car':
-			positions.append([self.x, self.y+1])
+		if highway[x,y+1].__class__.__name__ is not 'Car':
+			positions.append([x, y+1])
 
-		if self.x == 0:
-			if highway[self.x+1, self.y+1].__class__.__name__ is not 'Car':
-				positions.append([self.x+1, self.y+1])
+		if x == 0:
+			if highway[x+1, y+1].__class__.__name__ is not 'Car':
+				positions.append([x+1, y+1])
 
-		elif self.x == highway.shape[0] - 1:
-			if highway[self.x-1, self.y+1].__class__.__name__ is not 'Car':
-				positions.append([self.x-1, self.y+1])
+		elif x == highway.shape[0] - 1:
+			if highway[x-1, y+1].__class__.__name__ is not 'Car':
+				positions.append([x-1, y+1])
 
 		else:
-			if highway[self.x-1, self.y+1].__class__.__name__ is not 'Car':
-				positions.append([self.x-1, self.y+1])
+			if highway[x-1, y+1].__class__.__name__ is not 'Car':
+				positions.append([x-1, y+1])
 
-			elif highway[self.x+1, self.y+1].__class__.__name__ is not 'Car':
-				positions.append([self.x+1, self.y+1])
+			elif highway[x+1, y+1].__class__.__name__ is not 'Car':
+				positions.append([x+1, y+1])
 
 		return positions
 
@@ -181,10 +178,11 @@ def analyze_blocking(lanes, length, iterations):
 	plt.show()
 
 if __name__ == "__main__":
-	lanes, length, density, iterations = 3, 60, 0.99, 10000
+	lanes, length, density, iterations = 3, 60, 0.99, 1000
 
 	highWay = HighWay(lanes, length, density, iterations)
 	highWay.run()
+	print(highWay.occupied)
 	plt.plot(highWay.occupied)
 	plt.ylabel('% road occupied')
 	plt.xlabel('iterations')
