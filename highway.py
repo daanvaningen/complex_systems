@@ -94,6 +94,26 @@ class HighWay:
 
 		return total
 
+	def get_total_blocks(self):
+		''' returns the total number of blocks for all cars in the system
+		'''
+		total = 0
+		for car in self.cars:
+			total += car.blocks
+
+		return total
+
+	def get_throughput(self):
+		''' Calculate the throughput of the system by looking at all the cars in
+			the system and returning the number of forward moves devided by the
+			system size
+		'''
+		total = 0
+		for car in self.cars:
+			total += self.max_iterations - car.blocks
+
+		return total
+
 	def step(self, car):
 		''' Move one car and try to add a new one to the system
 		'''
@@ -167,34 +187,30 @@ def Analysis_of_density(lanes, length, iterations):
 def analyze_blocking(lanes, length, iterations):
 	# count number of times cars are blocked
 	blocks = []
-	densities = np.linspace(0.01, 1, 30)
-	for p in densities:
+	densities = np.linspace(0.05, 1, 20)
+	for p in tqdm(densities):
+		temp = []
 		highWay = HighWay(lanes, length, p, iterations)
 		highWay.run()
-		blocks.append(highWay.n_blocks)
+		blocks.append(highWay.get_total_blocks())
 	plt.plot(densities,blocks)
 	plt.xlabel("Density")
 	plt.ylabel("# Cars blocked")
 	plt.show()
 
-if __name__ == "__main__":
-	lanes, length, density, iterations = 3, 60, 0.99, 1000
-
-	highWay = HighWay(lanes, length, density, iterations)
-	highWay.run()
-	print(highWay.occupied)
-	plt.plot(highWay.occupied)
-	plt.ylabel('% road occupied')
-	plt.xlabel('iterations')
+def analyze_throughput(lanes, length, iterations):
+	throughput = []
+	densities = np.linspace(0.05, 0.95, 19)
+	for p in tqdm(densities):
+		temp = []
+		highWay = HighWay(lanes, length, p, iterations)
+		highWay.run()
+		throughput.append(highWay.get_throughput())
+	plt.plot(densities, throughput)
+	plt.xlabel("Density")
+	plt.ylabel("Throughput")
 	plt.show()
 
-	# size3 = Analysis_of_density(3, length, iterations)
-	# size4 = Analysis_of_density(4, length, iterations)
-	#
-	# plt.plot(size3[0],size3[1], label = "Highway size = 3")
-	# plt.plot(size4[0],size4[1], label = "Highway size = 4")
-	# plt.xlabel("Cars in the system")
-	# plt.ylabel("Average duration for passage")
-	# plt.legend()
-	# plt.title("Time to pass the highway for number of vehicles")
-	# plt.show()
+if __name__ == "__main__":
+	lanes, length, density, iterations = 3, 60, 0.99, 1000
+	analyze_throughput(lanes, length, iterations)
