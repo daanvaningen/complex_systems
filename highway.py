@@ -219,5 +219,5 @@ def analyze_throughput(lanes, length, iterations, multiple_lanes = False):
 	plt.show()
 
 if __name__ == "__main__":
-	lanes, length, density, iterations = 3, 60, 0.99, 1000
-	analyze_throughput(lanes, length, iterations, multiple_lanes = True)
+	lanes, length, density, iterations, multiple_lane = 3, 60, 0.99, 1000, True
+	analyze_throughput(lanes, length, iterations, multiple_lanes)
