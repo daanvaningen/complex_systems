@@ -198,19 +198,26 @@ def analyze_blocking(lanes, length, iterations):
 	plt.ylabel("# Cars blocked")
 	plt.show()
 
-def analyze_throughput(lanes, length, iterations):
-	throughput = []
-	densities = np.linspace(0.05, 0.95, 19)
-	for p in tqdm(densities):
-		temp = []
-		highWay = HighWay(lanes, length, p, iterations)
-		highWay.run()
-		throughput.append(highWay.get_throughput())
-	plt.plot(densities, throughput)
+def analyze_throughput(lanes, length, iterations, multiple_lanes = False):
+	if multiple_lanes:
+		road_sizes = [lanes - 1, lanes, lanes + 1, lanes + 2]
+	else:
+		road_sizes = [lanes]
+
+	for road in tqdm(road_sizes):
+		throughput = []
+		densities = np.linspace(0.05, 1, 20)
+		for p in densities:
+			temp = []
+			highWay = HighWay(road, length, p, iterations)
+			highWay.run()
+			throughput.append(highWay.get_throughput())
+		plt.plot(densities, throughput, label="Size: "+str(road))
 	plt.xlabel("Density")
 	plt.ylabel("Throughput")
+	plt.legend()
 	plt.show()
 
 if __name__ == "__main__":
 	lanes, length, density, iterations = 3, 60, 0.99, 1000
-	analyze_throughput(lanes, length, iterations)
+	analyze_throughput(lanes, length, iterations, multiple_lanes = True)
