@@ -59,25 +59,25 @@ class HighWay:
 			otherwise try to move the car forward
 		'''
 		# accelerate
-		if car.v < self.v_max: 
+		if car.v < self.v_max:
 			car.v += 1
-		
+
 		# probability of slowing down
-		if np.random.random_sample() < 0.3 and car.v > 0: 
+		if np.random.random_sample() < 0.3 and car.v > 0:
 			car.v -= 1
-		
+
 		# move back a lane if follower or preceder is faster
 		if ((self.v_following(car) > car.v or self.v_preceding(car) > car.v)
 		and self.gap_right(car) > 0):
 			move = min(self.gap_right(car),car.v)
 			next_x, next_y = car.x-1, (car.y+move)%self.length
-			
+
 		# move left a lane if there is more room
 		elif self.gap_left(car) > self.gap_front(car):
 			move = min(self.gap_left(car),car.v)
 			next_x, next_y = car.x+1, (car.y+move)%self.length
-			
-		# else go straight 
+
+		# else go straight
 		else:
 			move = min(self.gap_front(car),car.v)
 			next_x, next_y = car.x, (car.y+move)%self.length
@@ -111,14 +111,14 @@ class HighWay:
 			total += self.removed_cars[i].get_elapsed_time()
 
 		return total
-		
+
 	def v_following(self, car):
 		i = 1
 		while self.road[car.x,(car.y-i)%self.length] is None:
 			i += 1
 		follower = self.road[car.x,(car.y-i)%self.length]
 		return follower.v
-		
+
 	def v_preceding(self, car):
 		i = 1
 		while self.road[car.x-1,(car.y+i)%self.length] is None:
@@ -131,21 +131,21 @@ class HighWay:
 		while self.road[car.x,(car.y+i)%self.length] is None:
 			i += 1
 		return i-1
-		
+
 	def gap_left(self, car):
 		if car.x == self.lanes - 1: return 0
 		i = 1
 		while self.road[car.x+1,(car.y+i)%self.length] is None:
 			i += 1
 		return i-1
-		
+
 	def gap_right(self, car):
 		if car.x == 0: return 0
 		i = 1
 		while self.road[car.x-1,(car.y+i)%self.length] is None:
 			i += 1
 		return i-1
-		
+
 	def run(self, max_iterations):
 		for _ in range(max_iterations):
 			for car in np.random.choice(self.cars,len(self.cars),replace=False):
@@ -177,7 +177,7 @@ def analyze_flow(lanes, length, iterations, v_max):
 	plt.ylabel('flow')
 	plt.xlabel('density')
 	# plt.show()
-	
+
 def analyze_speed(lanes, length, iterations, v_max):
 	densities = np.linspace(0.1,1,25)
 	speeds = []
@@ -190,40 +190,50 @@ def analyze_speed(lanes, length, iterations, v_max):
 	plt.xlabel('density')
 	# plt.show()
 
+def Analyze_diferrent_speeds(lanes, length, iterations, v_begin, v_end, precision = 10):
+	all_v = np.linspace(v_begin, v_end, v_end - v_begin + 1)
+	for i in tqdm(all_v):
+		flows = []
+		cars = np.linspace(50, lanes*length, 100)
+		for c in cars:
+			avg_flows = []
+			for j in range(precision):
+				highWay = HighWay(lanes, length, c/(lanes*length), i)
+				highWay.run(iterations)
+				avg_flows.append(highWay.passes/iterations)
+			flows.append(np.mean(avg_flows))
+		plt.plot(cars, flows, label = 'v_max = '+str(i))
+	plt.title('Lanes, length, iterations = ' +str(lanes) + ' , ' +str(length) + ' , ' +str(iterations))
+	plt.legend(loc='best')
+	plt.xlabel('# cars')
+	plt.ylabel('flow (cars passed per iteration)')
+	plt.show()
+
+def Analyze_different_lanes(length, iterations, vmax, lanes_begin, lanes_end, precision = 10):
+	all_lanes = np.linspace(lanes_begin, lanes_end, lanes_end - lanes_begin + 1)
+	for i in tqdm(all_lanes):
+		flows = []
+		cars = np.linspace(50, i*length, 100)
+		for c in cars:
+			avg_flows = []
+			for j in range(precision):
+				highWay = HighWay(int(i), length, c/(i*length), vmax)
+				highWay.run(iterations)
+				avg_flows.append(highWay.passes/iterations)
+			flows.append(np.mean(avg_flows))
+		plt.plot(cars, flows, label = 'Lanes = '+str(i))
+	plt.title('Vmax, length, iterations = ' +str(vmax) + ' , ' +str(length) + ' , ' +str(iterations))
+	plt.legend(loc='best')
+	plt.xlabel('# cars')
+	plt.ylabel('flow (cars passed per iteration)')
+	plt.show()
+
 
 if __name__ == "__main__":
 
-	lanes, length, iterations, v_max = 3, 200, 100, 3	
-	cars = np.linspace(50,lanes*length,35)
-	
-	flows = []
-	for c in tqdm(cars):
-		highWay = HighWay(lanes, length, c/(lanes*length), v_max)
-		highWay.run(iterations)
-		flows.append(highWay.passes/iterations)
-	plt.plot(cars,flows,label='v_max = 4, lanes = 3')
-	
-	# add lane
-	lanes, v_max = 4, 3
-	cars = np.linspace(50,lanes*length,35)
-	flows = []
-	for c in tqdm(cars):
-		highWay = HighWay(lanes, length, c/(lanes*length), v_max)
-		highWay.run(iterations)
-		flows.append(highWay.passes/iterations)
-	plt.plot(cars,flows,label='v_max = 3, lanes = 4')
-	
-	# increase v_max
-	lanes, v_max = 3, 4	
-	cars = np.linspace(50,lanes*length,35)
-	flows = []
-	for c in tqdm(cars):
-		highWay = HighWay(lanes, length, c/(lanes*length), v_max)
-		highWay.run(iterations)
-		flows.append(highWay.passes/iterations)
-	plt.plot(cars,flows,label='v_max = 4, lanes = 3')
-	
-	plt.legend(loc='best')
-	plt.xlabel('# cars')
-	plt.ylabel('flow')
-	plt.show()
+	lanes, length, iterations, v_max = 2, 200, 100, 3
+
+	'''Please note that this function migth take 15 minutes to run!!
+	'''
+	# Analyze_diferrent_speeds(lanes, length, iterations, 3, 10, precision = 5)
+	Analyze_different_lanes(length, iterations, v_max, 2, 5, precision = 5)
