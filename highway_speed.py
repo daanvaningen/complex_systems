@@ -203,6 +203,9 @@ def Analyze_diferrent_speeds(lanes, length, iterations, v_begin, v_end, precisio
 				avg_flows.append(highWay.passes/iterations)
 			flows.append(np.mean(avg_flows))
 		plt.plot(cars, flows, label = 'v_max = '+str(i))
+
+	limit_function = [-0.01*j + 4 for j in cars]
+	plt.plot(cars, limit_function, label = str(-0.01)+"*cars"+str("+4"))
 	plt.title('Lanes, length, iterations = ' +str(lanes) + ' , ' +str(length) + ' , ' +str(iterations))
 	plt.legend(loc='best')
 	plt.xlabel('# cars')
@@ -233,7 +236,8 @@ if __name__ == "__main__":
 
 	lanes, length, iterations, v_max = 2, 200, 100, 3
 
-	'''Please note that this function migth take 15 minutes to run!!
+	'''Please note that the following functions migth take 15 minutes to run!!
 	'''
-	# Analyze_diferrent_speeds(lanes, length, iterations, 3, 10, precision = 5)
-	Analyze_different_lanes(length, iterations, v_max, 2, 5, precision = 5)
+
+	Analyze_diferrent_speeds(lanes, length, iterations, 3, 10, precision = 5)
+	# Analyze_different_lanes(length, iterations, v_max, 2, 5, precision = 5)
