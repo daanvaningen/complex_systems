@@ -23,12 +23,14 @@ class HighWay:
 		self.length = length
 		self.road = np.empty((lanes, length), dtype=object)
 		self.density = density
+		self.new_car_probability = 0.4
 		self.cars = []				# List of all cars on the road
 		self.removed_cars = []		# list of all removed cars
 		self.populate_road()
 		self.occupied = []	 # percentage of road occupied
 		self.v_max = v_max
 		self.passes = 0
+		self.on_ramps = [int(self.length*(4/5))]
 
 
 	def populate_road(self):
@@ -37,7 +39,7 @@ class HighWay:
 		'''
 		for i in range(self.lanes):
 			for j in range(self.length):
-				if(random.random() < self.density):
+				if(random.random() < self.new_car_probability):
 					new_car = Car(i,j)
 					self.road[i,j] = new_car
 					self.cars.append(new_car)
@@ -53,6 +55,20 @@ class HighWay:
 					visualized_road[i,j] = 1
 
 		return visualized_road
+
+	def compute_local_density(self):
+
+		density = np.zeros((self.lanes,self.length))
+		for i in range(self.lanes):
+			for j in range(self.length):
+				a = [self.road[i,j+k] for k in range(-5,5)
+					if j+k >= 0 and j+k < self.length ]
+				count = 0
+				for c in a:
+					if c != None:
+						count += 1.
+					density[i,j] = count/len(a)
+		return density
 
 	def action(self, car):
 		''' Remove the car from the system if it is at the end of the track,
@@ -70,30 +86,41 @@ class HighWay:
 		if ((self.v_following(car) > car.v or self.v_preceding(car) > car.v)
 		and self.gap_right(car) > 0):
 			move = min(self.gap_right(car),car.v)
-			next_x, next_y = car.x-1, (car.y+move)%self.length
+			next_x, next_y = car.x-1, (car.y+move)
 
 		# move left a lane if there is more room
 		elif self.gap_left(car) > self.gap_front(car):
 			move = min(self.gap_left(car),car.v)
-			next_x, next_y = car.x+1, (car.y+move)%self.length
+			next_x, next_y = car.x+1, (car.y+move)
 
 		# else go straight
 		else:
 			move = min(self.gap_front(car),car.v)
-			next_x, next_y = car.x, (car.y+move)%self.length
+			next_x, next_y = car.x, (car.y+move)
 			# print('straight')
 		# print(next_x, next_y, move)
-		if next_y < car.y: self.passes += 1
-		self.road[car.x, car.y] = None
-		self.road[next_x, next_y] = car
-		car.x, car.y, car.v = next_x, next_y, move
+		if next_y < self.length:
+			self.road[car.x, car.y] = None
+			self.road[next_x, next_y] = car
+			car.x, car.y, car_v = next_x, next_y, move
+		else:
+			self.passes += 1
+			self.road[car.x, car.y] = None
 
-	# def new_flow_of_cars(self):
-		# for i in range(self.lanes):
-			# if self.road[i,0].__class__.__name__ is not 'Car' and random.random() < self.density:
-				# new_car = Car(i,0)
-				# self.cars.append(new_car)
-				# self.road[i,0] = new_car
+
+	def new_flow_of_cars(self):
+		for i in range(self.lanes):
+			if self.road[i,0].__class__.__name__ is not 'Car' and random.random() < self.new_car_probability:
+				new_car = Car(i,0)
+				new_car.v = int(self.v_max/2)
+				self.cars.append(new_car)
+				self.road[i,0] = new_car
+		for i in self.on_ramps:
+			if self.road[0,i].__class__.__name__ is not 'Car' and random.random() < self.new_car_probability:
+				new_car = Car(0,i)
+				new_car.v = int(self.v_max/4)
+				self.cars.append(new_car)
+				self.road[0,i] = new_car
 
 	def get_avg_time_of_passed_cars(self):
 		''' Returns the average time cars of the cars that traveled through
@@ -190,7 +217,7 @@ def analyze_flow(lanes, length, iterations, v_max):
 		flux.append(highWay.passes/iterations)
 	plt.plot(densities, flux)
 	plt.ylabel('flow')
-	plt.xlabel('density')
+	plt.xlabel('new_car_probability')
 	# plt.show()
 
 def analyze_speed(lanes, length, iterations, v_max):
@@ -202,7 +229,7 @@ def analyze_speed(lanes, length, iterations, v_max):
 		speeds.append(highWay.speed)
 	plt.plot(densities, speeds)
 	plt.ylabel('average speed')
-	plt.xlabel('density')
+	plt.xlabel('new_car_probability')
 	# plt.show()
 
 def Analyze_diferrent_speeds(lanes, length, iterations, v_begin, v_end, precision = 10):
