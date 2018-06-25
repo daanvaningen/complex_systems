@@ -86,7 +86,7 @@ class HighWay:
 		if next_y < car.y: self.passes += 1
 		self.road[car.x, car.y] = None
 		self.road[next_x, next_y] = car
-		car.x, car.y, car_v = next_x, next_y, move
+		car.x, car.y, car.v = next_x, next_y, move
 
 	# def new_flow_of_cars(self):
 		# for i in range(self.lanes):
@@ -148,9 +148,24 @@ class HighWay:
 
 	def run(self, max_iterations):
 		for _ in range(max_iterations):
-			for car in np.random.choice(self.cars,len(self.cars),replace=False):
-				self.action(car)
-			self.occupied.append(len(self.cars)/(self.length*self.lanes))
+			self.step()
+
+	def step(self):
+		for car in np.random.choice(self.cars,len(self.cars),replace=False):
+			self.action(car)
+		self.occupied.append(len(self.cars)/(self.length*self.lanes))
+
+	def get_speeds(self):
+		m = np.empty((self.lanes, self.length))
+		for i in range(self.lanes):
+			for j in range(self.length):
+				temp = self.road[i,j]
+				if(temp is not None):
+					m[i,j] = self.road[i,j].v
+				else:
+					m[i,j] = None
+
+		return m
 
 class Car:
 	def __init__(self, xpos, ypos):
@@ -231,13 +246,30 @@ def Analyze_different_lanes(length, iterations, vmax, lanes_begin, lanes_end, pr
 	plt.ylabel('flow (cars passed per iteration)')
 	plt.show()
 
+def animate_simulation(lanes, length, density, v_max):
+	highWay = HighWay(lanes, length, density, v_max)
+	for _ in range(100):
+		highWay.step()
+	speed_matrix = highWay.get_speeds()
+
+	plt.figure()
+	plt.imshow(speed_matrix)
+	ax = plt.gca()
+	cur_cmap = plt.cm.get_cmap('jet', highWay.v_max)
+	cur_cmap.set_bad(color='white')
+	ax.set_xticks(np.arange(-.5, length, 1), minor=True);
+	ax.set_yticks(np.arange(-.5, lanes, 1), minor=True);
+	plt.colorbar()
+	ax.grid(b=True, which='minor', color='w', linestyle='-', linewidth=2)
+	plt.show()
+
 
 if __name__ == "__main__":
 
-	lanes, length, iterations, v_max = 2, 200, 100, 3
-
+	lanes, length, iterations, density, v_max = 5, 10, 100, 0.8, 3
+	animate_simulation(lanes, length, density, v_max)
 	'''Please note that the following functions migth take 15 minutes to run!!
 	'''
 
-	Analyze_diferrent_speeds(lanes, length, iterations, 3, 10, precision = 5)
+	# Analyze_diferrent_speeds(lanes, length, iterations, 3, 10, precision = 5)
 	# Analyze_different_lanes(length, iterations, v_max, 2, 5, precision = 5)
