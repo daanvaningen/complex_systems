@@ -141,36 +141,46 @@ class HighWay:
 
 	def v_following(self, car):
 		i = 1
-		while self.road[car.x,(car.y-i)%self.length] is None:
+		if car.y-i < 0: return 0
+		while self.road[car.x,(car.y-i)] is None:
 			i += 1
-		follower = self.road[car.x,(car.y-i)%self.length]
+			if car.y-i < 0: return 0
+		follower = self.road[car.x,(car.y-i)]
 		return follower.v
 
 	def v_preceding(self, car):
 		i = 1
-		while self.road[car.x-1,(car.y+i)%self.length] is None:
+		if car.y+i >= self.length: return 0
+		while self.road[car.x-1,(car.y+i)] is None:
 			i += 1
-		preceding = self.road[car.x-1,(car.y+i)%self.length]
+			if car.y+i >= self.length: return 0
+		preceding = self.road[car.x-1,(car.y+i)]
 		return preceding.v
 
 	def gap_front(self, car):
 		i = 1
-		while self.road[car.x,(car.y+i)%self.length] is None:
+		if car.y+i >= self.length: return car.v
+		while self.road[car.x,(car.y+i)] is None:
 			i += 1
+			if car.y+i >= self.length: return car.v
 		return i-1
 
 	def gap_left(self, car):
 		if car.x == self.lanes - 1: return 0
 		i = 1
-		while self.road[car.x+1,(car.y+i)%self.length] is None:
+		if car.y+i >= self.length: return car.v
+		while self.road[car.x+1,(car.y+i)] is None:
 			i += 1
+			if car.y+i >= self.length: return car.v
 		return i-1
 
 	def gap_right(self, car):
 		if car.x == 0: return 0
 		i = 1
-		while self.road[car.x-1,(car.y+i)%self.length] is None:
+		if car.y+i >= self.length: return car.v
+		while self.road[car.x-1,(car.y+i)] is None:
 			i += 1
+			if car.y+i >= self.length: return car.v
 		return i-1
 
 	def run(self, max_iterations):
@@ -262,7 +272,7 @@ def Analyze_different_lanes(length, iterations, vmax, lanes_begin, lanes_end, pr
 
 if __name__ == "__main__":
 
-	lanes, length, iterations, v_max = 2, 100, 100, 4
+	lanes, length, iterations, v_max = 3, 100, 100, 4
 	p = 0.65
 	'''Please note that the following functions migth take 15 minutes to run!!
 	'''
