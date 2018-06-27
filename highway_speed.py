@@ -81,7 +81,7 @@ class HighWay:
 			car.v += 1
 
 		# probability of slowing down
-		if np.random.random_sample() < 0.3 and car.v > 1:
+		if np.random.random_sample() < 0.3 and car.v > 0:
 			car.v -= 1
 
 		# move back a lane if follower or preceder is faster
@@ -103,7 +103,7 @@ class HighWay:
 		if next_y < self.length:
 			self.road[car.x, car.y] = None
 			self.road[next_x, next_y] = car
-			car.x, car.y, car_v = next_x, next_y, move
+			car.x, car.y, car.v = next_x, next_y, move
 		else:
 			self.passes += 1
 			self.road[car.x, car.y] = None
@@ -314,7 +314,7 @@ def animate_simulation(lanes, length, density, v_max):
 	def animate(i):
 		highWay.step()
 		arr = highWay.get_speeds()
-		# print(arr)
+		print(arr)
 		vmax     = np.nanmax(arr)
 		vmin     = np.nanmin(arr)
 		im.set_data(arr)
@@ -351,7 +351,7 @@ def animate_simulation(lanes, length, density, v_max):
 
 if __name__ == "__main__":
 
-	lanes, length, iterations, density, v_max = 2, 20, 100, 0.3, 2
+	lanes, length, iterations, density, v_max = 2, 40, 100, 0.75, 2
 	animate_simulation(lanes, length, density, v_max)
 	'''Please note that the following functions migth take 15 minutes to run!!
 	'''
