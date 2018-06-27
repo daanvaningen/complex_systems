@@ -12,9 +12,11 @@ Authors:
 
 import numpy as np
 import matplotlib.pyplot as plt
-
+import matplotlib.animation as animation
+from matplotlib import colors
 import random
 from tqdm import tqdm
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 class HighWay:
@@ -23,7 +25,7 @@ class HighWay:
 		self.length = length
 		self.road = np.empty((lanes, length), dtype=object)
 		self.density = density
-		self.new_car_probability = 0.4
+		self.new_car_probability = 1
 		self.cars = []				# List of all cars on the road
 		self.removed_cars = []		# list of all removed cars
 		self.populate_road()
@@ -284,25 +286,67 @@ def Analyze_different_lanes(length, iterations, vmax, lanes_begin, lanes_end, pr
 
 def animate_simulation(lanes, length, density, v_max):
 	highWay = HighWay(lanes, length, density, v_max)
-	for _ in tqdm(range(10)):
-		highWay.step()
 	speed_matrix = highWay.get_speeds()
 
-	plt.figure()
-	plt.imshow(speed_matrix)
-	ax = plt.gca()
-	cur_cmap = plt.cm.get_cmap('jet', highWay.v_max)
-	cur_cmap.set_bad(color='white')
+	fig = plt.figure(figsize=(20,12))
+	ax = fig.add_subplot(111)
+
+	div = make_axes_locatable(ax)
+	cax = div.append_axes('right', '5%', '5%')
+
+	# make a color map of fixed colors
+	cmap = colors.ListedColormap(['red', 'yellow', 'blue', 'green'])
+	bounds=[0,1,2,3,4]
+	norm = colors.BoundaryNorm(bounds, cmap.N)
+
+	im = ax.imshow(speed_matrix, cmap=cmap, norm=norm, origin='lower', animated=True)
 	ax.set_xticks(np.arange(-.5, length, 1), minor=True);
 	ax.set_yticks(np.arange(-.5, lanes, 1), minor=True);
-	plt.colorbar()
-	ax.grid(b=True, which='minor', color='w', linestyle='-', linewidth=2)
+	ax.grid(b=True, which='minor', color='w', linestyle='-', linewidth=5)
+	cb = fig.colorbar(im, cax=cax)
+	tx = ax.set_title('Frame 0')
+
+	def animate(i):
+		highWay.step()
+		arr = highWay.get_speeds()
+		print(arr)
+		vmax     = np.nanmax(arr)
+		vmin     = np.nanmin(arr)
+		im.set_data(arr)
+		im.set_clim(vmin, vmax)
+		tx.set_text('Frame {0}'.format(i))
+
+	ani = animation.FuncAnimation(fig, animate, frames=10, interval=1000)
+
 	plt.show()
+	# cur_cmap = plt.cm.get_cmap('jet', highWay.v_max)
+	# cur_cmap.set_bad(color='white')
+	# ax.set_xticks(np.arange(-.5, length, 1), minor=True);
+	# ax.set_yticks(np.arange(-.5, lanes, 1), minor=True);
+	# ax.grid(b=True, which='minor', color='w', linestyle='-', linewidth=2)
+	# im = plt.imshow(speed_matrix, animated=True, cmap=cur_cmap)
+	# cb = fig.colorbar(im)
+	# tx = ax.set_title('Frame 0')
+
+	# def updatefig(i):
+	# 	highWay.step()
+	# 	speeds = highWay.get_speeds()
+	# 	# vmax = np.max(speeds)
+	# 	# vmin = np.min(speeds)
+	# 	im.set_array(speeds)
+	# 	# im.set_data(speeds)
+	# 	# im.set_clim(vmin, vmax)
+	# 	# tx.set_text('Frame {0}'.format(i))
+	# 	return im,
+	#
+	# ani = animation.FuncAnimation(fig, updatefig, interval=200, blit=True)
+	#
+	# plt.show()
 
 
 if __name__ == "__main__":
 
-	lanes, length, iterations, density, v_max = 5, 10, 100, 0.8, 3
+	lanes, length, iterations, density, v_max = 5, 50, 100, 0.8, 3
 	animate_simulation(lanes, length, density, v_max)
 	'''Please note that the following functions migth take 15 minutes to run!!
 	'''
