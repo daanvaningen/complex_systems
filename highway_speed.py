@@ -45,7 +45,7 @@ class HighWay:
 					self.cars.append(new_car)
 
 	def visualize_road(self):
-		''' prints a matrix with zeros and ones. Every one is a car, such that
+		''' returns a matrix with zeros and ones. Every one is a car, such that
 			we can plot it using imshow.
 		'''
 		visualized_road = np.zeros((self.lanes, self.length))
@@ -74,7 +74,6 @@ class HighWay:
 		''' Remove the car from the system if it is at the end of the track,
 			otherwise try to move the car forward
 		'''
-		print 'start'
 		# accelerate
 		if car.v < self.v_max:
 			car.v += 1
@@ -86,24 +85,19 @@ class HighWay:
 		# move back a lane if follower or preceder is faster
 		if ((self.v_following(car) > car.v or self.v_preceding(car) > car.v)
 		and self.gap_right(car) > 0):
-			print 'gr'
 			move = min(self.gap_right(car),car.v)
 			next_x, next_y = car.x-1, (car.y+move)
 
 		# move left a lane if there is more room
 		elif self.gap_left(car) > self.gap_front(car):
-			print 'gl'
 			move = min(self.gap_left(car),car.v)
 			next_x, next_y = car.x+1, (car.y+move)
 
 		# else go straight
 		else:
-			print 'st'
 			move = min(self.gap_front(car),car.v)
 			next_x, next_y = car.x, (car.y+move)
-			# print('straight')
-		print 'done'
-		# print(next_x, next_y, move)
+
 		if next_y < self.length:
 			self.road[car.x, car.y] = None
 			self.road[next_x, next_y] = car
@@ -145,37 +139,46 @@ class HighWay:
 
 	def v_following(self, car):
 		i = 1
-		while self.road[car.x,(car.y-i)%self.length] is None:
+		if car.y-i < 0: return 0
+		while self.road[car.x,(car.y-i)] is None:
 			i += 1
-		follower = self.road[car.x,(car.y-i)%self.length]
+			if car.y-i < 0: return 0
+		follower = self.road[car.x,(car.y-i)]
 		return follower.v
 
 	def v_preceding(self, car):
 		i = 1
-		while self.road[car.x-1,(car.y+i)%self.length] is None:
+		if car.y+i >= self.length: return 0
+		while self.road[car.x-1,(car.y+i)] is None:
 			i += 1
-		preceding = self.road[car.x-1,(car.y+i)%self.length]
+			if car.y+i >= self.length: return 0
+		preceding = self.road[car.x-1,(car.y+i)]
 		return preceding.v
 
 	def gap_front(self, car):
 		i = 1
-		while self.road[car.x,(car.y+i)%self.length] is None:
+		if car.y+i >= self.length: return car.v
+		while self.road[car.x,(car.y+i)] is None:
 			i += 1
+			if car.y+i >= self.length: return car.v
 		return i-1
 
 	def gap_left(self, car):
 		if car.x == self.lanes - 1: return 0
 		i = 1
-		print self.road[car.x+1]
-		while self.road[car.x+1,(car.y+i)%self.length] is None:
+		if car.y+i >= self.length: return car.v
+		while self.road[car.x+1,(car.y+i)] is None:
 			i += 1
+			if car.y+i >= self.length: return car.v
 		return i-1
 
 	def gap_right(self, car):
 		if car.x == 0: return 0
 		i = 1
-		while self.road[car.x-1,(car.y+i)%self.length] is None:
+		if car.y+i >= self.length: return car.v
+		while self.road[car.x-1,(car.y+i)] is None:
 			i += 1
+			if car.y+i >= self.length: return car.v
 		return i-1
 
 	def run(self, max_iterations):
