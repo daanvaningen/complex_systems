@@ -25,14 +25,14 @@ class HighWay:
 		self.length = length
 		self.road = np.empty((lanes, length), dtype=object)
 		self.density = density
-		self.new_car_probability = 0.4
+		self.new_car_probability = density
 		self.cars = []				# List of all cars on the road
 		self.removed_cars = []		# list of all removed cars
 		self.populate_road()
 		self.occupied = []	 # percentage of road occupied
 		self.v_max = v_max
 		self.passes = 0
-		self.on_ramps = [int(self.length*(4/5))]
+		self.on_ramps = [int(self.length*(1/2))]
 
 
 	def populate_road(self):
@@ -81,11 +81,11 @@ class HighWay:
 			car.v += 1
 
 		# probability of slowing down
-		if np.random.random_sample() < 0.3 and car.v > 0:
+		if np.random.random_sample() < 0.3 and car.v > 1:
 			car.v -= 1
 
 		# move back a lane if follower or preceder is faster
-		if ((self.v_following(car) > car.v or self.v_preceding(car) > car.v)
+		if ((self.v_following(car) > car.v or self.v_preceding(car) >= car.v)
 		and self.gap_right(car) > 0):
 			move = min(self.gap_right(car),car.v)
 			next_x, next_y = car.x-1, (car.y+move)
@@ -112,13 +112,13 @@ class HighWay:
 		for i in range(self.lanes):
 			if self.road[i,0].__class__.__name__ is not 'Car' and random.random() < self.new_car_probability:
 				new_car = Car(i,0)
-				new_car.v = int(self.v_max/2)
+				new_car.v = max(1, int(self.v_max/2))
 				self.cars.append(new_car)
 				self.road[i,0] = new_car
 		for i in self.on_ramps:
 			if self.road[0,i].__class__.__name__ is not 'Car' and random.random() < self.new_car_probability:
 				new_car = Car(0,i)
-				new_car.v = int(self.v_max/4)
+				new_car.v = max(1, int(self.v_max/4))
 				self.cars.append(new_car)
 				self.road[0,i] = new_car
 
@@ -153,7 +153,7 @@ class HighWay:
 		if car.y+i >= self.length: return 0
 		while self.road[car.x-1,(car.y+i)] is None:
 			i += 1
-			if car.y+i >= self.length: return 0
+			if car.y+i >= self.length: return car.v
 		preceding = self.road[car.x-1,(car.y+i)]
 		return preceding.v
 
@@ -321,7 +321,7 @@ def animate_simulation(lanes, length, density, v_max):
 		im.set_clim(vmin, vmax)
 		tx.set_text('Highway with cars moving at different speeds')
 
-	# ani = animation.FuncAnimation(fig, animate, frames=5, interval=1000)
+	ani = animation.FuncAnimation(fig, animate, interval=1000)
 
 	plt.show()
 	# cur_cmap = plt.cm.get_cmap('jet', highWay.v_max)
@@ -351,7 +351,7 @@ def animate_simulation(lanes, length, density, v_max):
 
 if __name__ == "__main__":
 
-	lanes, length, iterations, density, v_max = 3, 8, 100, 0.8, 3
+	lanes, length, iterations, density, v_max = 2, 20, 100, 0.3, 2
 	animate_simulation(lanes, length, density, v_max)
 	'''Please note that the following functions migth take 15 minutes to run!!
 	'''
