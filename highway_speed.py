@@ -74,6 +74,7 @@ class HighWay:
 		''' Remove the car from the system if it is at the end of the track,
 			otherwise try to move the car forward
 		'''
+		print 'start'
 		# accelerate
 		if car.v < self.v_max:
 			car.v += 1
@@ -85,19 +86,23 @@ class HighWay:
 		# move back a lane if follower or preceder is faster
 		if ((self.v_following(car) > car.v or self.v_preceding(car) > car.v)
 		and self.gap_right(car) > 0):
+			print 'gr'
 			move = min(self.gap_right(car),car.v)
 			next_x, next_y = car.x-1, (car.y+move)
 
 		# move left a lane if there is more room
 		elif self.gap_left(car) > self.gap_front(car):
+			print 'gl'
 			move = min(self.gap_left(car),car.v)
 			next_x, next_y = car.x+1, (car.y+move)
 
 		# else go straight
 		else:
+			print 'st'
 			move = min(self.gap_front(car),car.v)
 			next_x, next_y = car.x, (car.y+move)
 			# print('straight')
+		print 'done'
 		# print(next_x, next_y, move)
 		if next_y < self.length:
 			self.road[car.x, car.y] = None
@@ -106,7 +111,6 @@ class HighWay:
 		else:
 			self.passes += 1
 			self.road[car.x, car.y] = None
-
 
 	def new_flow_of_cars(self):
 		for i in range(self.lanes):
@@ -162,6 +166,7 @@ class HighWay:
 	def gap_left(self, car):
 		if car.x == self.lanes - 1: return 0
 		i = 1
+		print self.road[car.x+1]
 		while self.road[car.x+1,(car.y+i)%self.length] is None:
 			i += 1
 		return i-1
@@ -180,6 +185,7 @@ class HighWay:
 	def step(self):
 		for car in np.random.choice(self.cars,len(self.cars),replace=False):
 			self.action(car)
+		self.new_flow_of_cars()
 		self.occupied.append(len(self.cars)/(self.length*self.lanes))
 
 	def get_speeds(self):
@@ -275,7 +281,7 @@ def Analyze_different_lanes(length, iterations, vmax, lanes_begin, lanes_end, pr
 
 def animate_simulation(lanes, length, density, v_max):
 	highWay = HighWay(lanes, length, density, v_max)
-	for _ in range(100):
+	for _ in tqdm(range(10)):
 		highWay.step()
 	speed_matrix = highWay.get_speeds()
 
