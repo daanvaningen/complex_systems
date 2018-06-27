@@ -25,7 +25,7 @@ class HighWay:
 		self.length = length
 		self.road = np.empty((lanes, length), dtype=object)
 		self.density = density
-		self.new_car_probability = 1
+		self.new_car_probability = 0.4
 		self.cars = []				# List of all cars on the road
 		self.removed_cars = []		# list of all removed cars
 		self.populate_road()
@@ -286,6 +286,7 @@ def Analyze_different_lanes(length, iterations, vmax, lanes_begin, lanes_end, pr
 
 def animate_simulation(lanes, length, density, v_max):
 	highWay = HighWay(lanes, length, density, v_max)
+	highWay.run(10)
 	speed_matrix = highWay.get_speeds()
 
 	fig = plt.figure(figsize=(20,12))
@@ -302,21 +303,25 @@ def animate_simulation(lanes, length, density, v_max):
 	im = ax.imshow(speed_matrix, cmap=cmap, norm=norm, origin='lower', animated=True)
 	ax.set_xticks(np.arange(-.5, length, 1), minor=True);
 	ax.set_yticks(np.arange(-.5, lanes, 1), minor=True);
-	ax.grid(b=True, which='minor', color='w', linestyle='-', linewidth=5)
+	ax.grid(b=True, which='minor', color='black', linestyle='-', linewidth=5)
 	cb = fig.colorbar(im, cax=cax)
-	tx = ax.set_title('Frame 0')
+	labels = np.arange(0,4,1)
+	loc    = labels + .5
+	cb.set_ticks(loc)
+	cb.set_ticklabels(labels)
+	tx = ax.set_title('Highway with cars moving at different speeds')
 
 	def animate(i):
 		highWay.step()
 		arr = highWay.get_speeds()
-		print(arr)
+		# print(arr)
 		vmax     = np.nanmax(arr)
 		vmin     = np.nanmin(arr)
 		im.set_data(arr)
 		im.set_clim(vmin, vmax)
-		tx.set_text('Frame {0}'.format(i))
+		tx.set_text('Highway with cars moving at different speeds')
 
-	ani = animation.FuncAnimation(fig, animate, frames=10, interval=1000)
+	# ani = animation.FuncAnimation(fig, animate, frames=5, interval=1000)
 
 	plt.show()
 	# cur_cmap = plt.cm.get_cmap('jet', highWay.v_max)
@@ -346,7 +351,7 @@ def animate_simulation(lanes, length, density, v_max):
 
 if __name__ == "__main__":
 
-	lanes, length, iterations, density, v_max = 5, 50, 100, 0.8, 3
+	lanes, length, iterations, density, v_max = 3, 8, 100, 0.8, 3
 	animate_simulation(lanes, length, density, v_max)
 	'''Please note that the following functions migth take 15 minutes to run!!
 	'''
