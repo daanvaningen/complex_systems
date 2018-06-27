@@ -39,12 +39,14 @@ class HighWay:
 		''' Populate the road with cars, the number of initial cars depends on the
 			density of the traffic
 		'''
+
 		for i in range(self.lanes):
 			for j in range(self.length):
 				if(random.random() < self.new_car_probability):
 					new_car = Car(i,j)
 					self.road[i,j] = new_car
 					self.cars.append(new_car)
+
 
 	def visualize_road(self):
 		''' returns a matrix with zeros and ones. Every one is a car, such that
@@ -71,6 +73,25 @@ class HighWay:
 						count += 1.
 					density[i,j] = count/len(a)
 		return density
+
+	def compute_local_velocity_average(self):
+
+		velocity_av = np.zeros((self.lanes,self.length))
+		flow = np.zeros(self.length)
+	    	for i in range(self.lanes):
+	    		for j in range(self.length):
+	    			a = [self.road[i,j+k] for k in range(-5,5)
+	    				if j+k >= 0 and j+k < self.length ]
+	    			count = 0.
+	    			for c in a:
+	    				if c != None:
+	    					count += c.v	            
+	    				velocity_av[i,j] = count/len(a)
+		for j in range(self.length):
+			for i in range(self.lanes):
+				flow[j] += velocity_av[i,j]
+		flow = flow/self.lanes
+	    	return velocity_av, flow
 
 	def action(self, car):
 		''' Remove the car from the system if it is at the end of the track,
@@ -284,6 +305,25 @@ def Analyze_different_lanes(length, iterations, vmax, lanes_begin, lanes_end, pr
 	plt.ylabel('flow (cars passed per iteration)')
 	plt.show()
 
+def evolution_visualization(highWay):
+	highWay.run(1000)
+	total_time = 1000
+	jam_evolution = np.zeros((total_time,length))
+	for t in range(total_time):
+		highWay.run(1)
+		local_density_lane2 = highWay.compute_local_density()[0,:]
+		velocity_average, flow = highWay.compute_local_velocity_average()
+		vel_av_lane2 = velocity_average[1,:]
+		
+		for j in range(length):
+			#if local_density_lane2[j] > 0.75 and flow[j] < 2:
+			if local_density_lane2[j] > 0.75:
+				jam_evolution[t,j] = 1
+	plt.imshow(np.transpose(jam_evolution))
+	plt.xlabel('time')
+	plt.ylabel('position')
+	plt.show()
+
 def animate_simulation(lanes, length, density, v_max):
 	highWay = HighWay(lanes, length, density, v_max)
 	highWay.run(10)
@@ -351,8 +391,11 @@ def animate_simulation(lanes, length, density, v_max):
 
 if __name__ == "__main__":
 
-	lanes, length, iterations, density, v_max = 2, 40, 100, 0.75, 2
-	animate_simulation(lanes, length, density, v_max)
+	#lanes, length, iterations, density, v_max = 2, 40, 100, 0.75, 2
+	#animate_simulation(lanes, length, density, v_max)
+
+	lanes, length, iterations, new_car_probability, v_max = 2, 1000, 100, 0.8, 5
+
 	'''Please note that the following functions migth take 15 minutes to run!!
 	'''
 
