@@ -348,11 +348,32 @@ def animate_simulation(lanes, length, density, v_max):
 	#
 	# plt.show()
 
+def Speed_visualisation_over_time(lanes, length, density, v_max, timesteps):
+	highWay = HighWay(lanes, length, density, v_max)
+	highWay.run(10)
+	speedmatrix = np.zeros((lanes*timesteps, length))
+
+	for i in range(timesteps):
+		highWay.step()
+		speed = highWay.get_speeds()
+
+		speedmatrix[lanes*i:lanes*i+lanes, 0:length] = speed
+
+	plt.imshow(speedmatrix)
+	plt.xlabel("Location highway")
+	plt.ylabel("Iterations")
+	plt.colorbar()
+	plt.show()
+
+
 
 if __name__ == "__main__":
 
-	lanes, length, iterations, density, v_max = 2, 40, 100, 0.75, 2
-	animate_simulation(lanes, length, density, v_max)
+	lanes, length, iterations, density, v_max, timesteps = 2, 250, 100, 0.5, 2, 125
+
+	Speed_visualisation_over_time(lanes, length, density, v_max, timesteps)
+
+	# animate_simulation(lanes, length, density, v_max)
 	'''Please note that the following functions migth take 15 minutes to run!!
 	'''
 
