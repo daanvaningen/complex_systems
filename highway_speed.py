@@ -25,26 +25,31 @@ class HighWay:
 		self.length = length
 		self.road = np.empty((lanes, length), dtype=object)
 		self.density = density
-		self.new_car_probability = 0.4
+		self.new_car_probability = density
 		self.cars = []				# List of all cars on the road
 		self.removed_cars = []		# list of all removed cars
-		self.populate_road()
+		# self.populate_road()
+		new_car = Car(0,0)
+		self.road[0,0] = new_car
+		self.cars.append(new_car)
 		self.occupied = []	 # percentage of road occupied
 		self.v_max = v_max
 		self.passes = 0
-		self.on_ramps = [int(self.length*(4/5))]
+		self.on_ramps = [int(self.length*(1/2))]
 
 
 	def populate_road(self):
 		''' Populate the road with cars, the number of initial cars depends on the
 			density of the traffic
 		'''
+
 		for i in range(self.lanes):
 			for j in range(self.length):
 				if(random.random() < self.new_car_probability):
 					new_car = Car(i,j)
 					self.road[i,j] = new_car
 					self.cars.append(new_car)
+
 
 	def visualize_road(self):
 		''' returns a matrix with zeros and ones. Every one is a car, such that
@@ -72,6 +77,37 @@ class HighWay:
 					density[i,j] = count/len(a)
 		return density
 
+	def compute_local_velocity_average(self):
+
+		velocity_av = np.zeros((self.lanes,self.length))
+		flow = np.zeros(self.length)
+		for i in range(self.lanes):
+			for j in range(self.length):
+				a = [self.road[i,j+k] for k in range(-5,5)
+					if j+k >= 0 and j+k < self.length ]
+				count = 0.
+				for c in a:
+					if c != None:
+						count += c.v
+				velocity_av[i,j] = count/len(a)
+		for j in range(self.length):
+			for i in range(self.lanes):
+				flow[j] += velocity_av[i,j]
+		flow = flow/self.lanes
+		return velocity_av, flow
+
+	def get_avg_speed_per_meter(self):
+		avg = np.zeros(self.length)
+		for i in range(self.length):
+			cross = []
+			for j in range(self.lanes):
+				elem = self.road[j,i]
+				if type(elem) is Car:
+					cross.append(elem.v)
+
+			avg[i] = np.mean(cross)
+		return avg
+
 	def action(self, car):
 		''' Remove the car from the system if it is at the end of the track,
 			otherwise try to move the car forward
@@ -85,7 +121,7 @@ class HighWay:
 			car.v -= 1
 
 		# move back a lane if follower or preceder is faster
-		if ((self.v_following(car) > car.v or self.v_preceding(car) > car.v)
+		if ((self.v_following(car) > car.v or self.v_preceding(car) >= car.v)
 		and self.gap_right(car) > 0):
 			move = min(self.gap_right(car),car.v)
 			next_x, next_y = car.x-1, (car.y+move)
@@ -103,7 +139,7 @@ class HighWay:
 		if next_y < self.length:
 			self.road[car.x, car.y] = None
 			self.road[next_x, next_y] = car
-			car.x, car.y, car_v = next_x, next_y, move
+			car.x, car.y, car.v = next_x, next_y, move
 		else:
 			self.passes += 1
 			self.road[car.x, car.y] = None
@@ -112,13 +148,13 @@ class HighWay:
 		for i in range(self.lanes):
 			if self.road[i,0].__class__.__name__ is not 'Car' and random.random() < self.new_car_probability:
 				new_car = Car(i,0)
-				new_car.v = int(self.v_max/2)
+				new_car.v = max(1, int(self.v_max/2))
 				self.cars.append(new_car)
 				self.road[i,0] = new_car
 		for i in self.on_ramps:
 			if self.road[0,i].__class__.__name__ is not 'Car' and random.random() < self.new_car_probability:
 				new_car = Car(0,i)
-				new_car.v = int(self.v_max/3)
+				new_car.v = max(1, int(self.v_max/4))
 				self.cars.append(new_car)
 				self.road[0,i] = new_car
 
@@ -153,7 +189,7 @@ class HighWay:
 		if car.y+i >= self.length: return 0
 		while self.road[car.x-1,(car.y+i)] is None:
 			i += 1
-			if car.y+i >= self.length: return 0
+			if car.y+i >= self.length: return car.v
 		preceding = self.road[car.x-1,(car.y+i)]
 		return preceding.v
 
@@ -284,6 +320,25 @@ def Analyze_different_lanes(length, iterations, vmax, lanes_begin, lanes_end, pr
 	plt.ylabel('flow (cars passed per iteration)')
 	plt.show()
 
+def evolution_visualization(highWay):
+	# highWay.run(1000)
+	total_time = 1000
+	jam_evolution = np.zeros((total_time,length))
+	for t in range(total_time):
+		highWay.run(1)
+		local_density_lane2 = highWay.compute_local_density()[0,:]
+		velocity_average, flow = highWay.compute_local_velocity_average()
+		vel_av_lane2 = velocity_average[1,:]
+
+		for j in range(length):
+			#if local_density_lane2[j] > 0.75 and flow[j] < 2:
+			if local_density_lane2[j] > 0.75:
+				jam_evolution[t,j] = 1
+	plt.imshow(np.transpose(jam_evolution))
+	plt.xlabel('time')
+	plt.ylabel('position')
+	plt.show()
+
 def animate_simulation(lanes, length, density, v_max):
 	highWay = HighWay(lanes, length, density, v_max)
 	highWay.run(10)
@@ -314,14 +369,14 @@ def animate_simulation(lanes, length, density, v_max):
 	def animate(i):
 		highWay.step()
 		arr = highWay.get_speeds()
-		# print(arr)
+		print(arr)
 		vmax     = np.nanmax(arr)
 		vmin     = np.nanmin(arr)
 		im.set_data(arr)
 		im.set_clim(vmin, vmax)
 		tx.set_text('Highway with cars moving at different speeds')
 
-	# ani = animation.FuncAnimation(fig, animate, frames=5, interval=1000)
+	ani = animation.FuncAnimation(fig, animate, interval=1000)
 
 	plt.show()
 	# cur_cmap = plt.cm.get_cmap('jet', highWay.v_max)
@@ -348,13 +403,48 @@ def animate_simulation(lanes, length, density, v_max):
 	#
 	# plt.show()
 
+def analyze_phases(lanes, length, new_car_probability, v_max):
+	highWay = HighWay(lanes, length, new_car_probability, v_max)
+	total_time = 500
+	highWay.run(500)
+	jam_evolution = []
+	for t in range(total_time):
+		highWay.run(1)
+		avg_speeds = highWay.get_avg_speed_per_meter()
+		local_clusters = find_local_clusters(avg_speeds, 0.5, 1.5, 1)
+
+		jam_evolution.append(local_clusters)
+	plt.imshow(np.transpose(jam_evolution))
+	plt.xlabel('time')
+	plt.ylabel('position')
+	plt.show()
+
+def find_local_clusters(speeds, min, max, res_val):
+	res = []
+	length = len(speeds)
+	for i in range(length):
+		if(i < 2 or i > length-3):
+			res.append(0)
+		else:
+			avg = np.mean([speeds[i-2], speeds[i-1], speeds[i], speeds[i+1], speeds[i+2]])
+			if(avg > min and avg < max):
+				res.append(res_val)
+			else:
+				res.append(0)
+	return res
 
 if __name__ == "__main__":
 
-	lanes, length, iterations, density, v_max = 3, 8, 100, 0.8, 3
-	animate_simulation(lanes, length, density, v_max)
+	#lanes, length, iterations, density, v_max = 2, 40, 100, 0.75, 2
+	#animate_simulation(lanes, length, density, v_max)
+
+	lanes, length, iterations, new_car_probability, v_max = 3, 500, 100, 0.55, 5
+	highWay = HighWay(lanes, length, new_car_probability, v_max)
+	analyze_phases(lanes, length,  new_car_probability, v_max)
+	# evolution_visualization(highWay)
 	'''Please note that the following functions migth take 15 minutes to run!!
 	'''
+
 
 	# Analyze_diferrent_speeds(lanes, length, iterations, 3, 10, precision = 5)
 	# Analyze_different_lanes(length, iterations, v_max, 2, 5, precision = 5)
