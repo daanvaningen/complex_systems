@@ -143,6 +143,7 @@ class HighWay:
 		else:
 			self.passes += 1
 			self.road[car.x, car.y] = None
+			self.cars.remove(car)
 
 	def new_flow_of_cars(self):
 		for i in range(self.lanes):
@@ -321,19 +322,27 @@ def Analyze_different_lanes(length, iterations, vmax, lanes_begin, lanes_end, pr
 	plt.show()
 
 def evolution_visualization(highWay):
-	# highWay.run(1000)
+	highWay.run(500)
 	total_time = 1000
 	jam_evolution = np.zeros((total_time,length))
-	for t in range(total_time):
+	velocity_average_ev = np.zeros((total_time,lanes,length))
+	for t in tqdm(range(total_time)):
 		highWay.run(1)
-		local_density_lane2 = highWay.compute_local_density()[0,:]
-		velocity_average, flow = highWay.compute_local_velocity_average()
-		vel_av_lane2 = velocity_average[1,:]
-
+		local_density_lane2 = highWay.compute_local_density()[-1,:]
+		velocity_average_ev[t,:,:], flow = highWay.compute_local_velocity_average()
 		for j in range(length):
 			#if local_density_lane2[j] > 0.75 and flow[j] < 2:
 			if local_density_lane2[j] > 0.75:
 				jam_evolution[t,j] = 1
+		if t > 6:
+			for j in range(length):
+				count_k = 0
+				for k in range(1,6):
+					if np.max(velocity_average_ev[k,:,j])-np.min(velocity_average_ev[k,:,j]) <= 1:
+						count_k += 1
+				if count_k == 5 and jam_evolution[t,j] == 1:
+					jam_evolution[t,j] == 2
+
 	plt.imshow(np.transpose(jam_evolution))
 	plt.xlabel('time')
 	plt.ylabel('position')
@@ -411,12 +420,13 @@ def analyze_phases(lanes, length, new_car_probability, v_max):
 	for t in range(total_time):
 		highWay.run(1)
 		avg_speeds = highWay.get_avg_speed_per_meter()
-		local_clusters = find_local_clusters(avg_speeds, 0.5, 1.5, 1)
+		local_clusters = find_local_clusters(avg_speeds, 0.5, 1.5, 2)
 
 		jam_evolution.append(local_clusters)
 	plt.imshow(np.transpose(jam_evolution))
 	plt.xlabel('time')
 	plt.ylabel('position')
+	plt.title('Synchronized flow, $p = $' + str(new_car_probability))
 	plt.show()
 
 def find_local_clusters(speeds, min, max, res_val):
