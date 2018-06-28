@@ -249,7 +249,6 @@ class Car:
 		self.v = 1
 		self.blocks = 0
 
-
 	def get_elapsed_time(self):
 		''' returns the `time` a car spends in the system is the sum of the number of
 			times it could not move forward and its current y position
@@ -388,32 +387,10 @@ def animate_simulation(lanes, length, density, v_max):
 	ani = animation.FuncAnimation(fig, animate, interval=1000)
 
 	plt.show()
-	# cur_cmap = plt.cm.get_cmap('jet', highWay.v_max)
-	# cur_cmap.set_bad(color='white')
-	# ax.set_xticks(np.arange(-.5, length, 1), minor=True);
-	# ax.set_yticks(np.arange(-.5, lanes, 1), minor=True);
-	# ax.grid(b=True, which='minor', color='w', linestyle='-', linewidth=2)
-	# im = plt.imshow(speed_matrix, animated=True, cmap=cur_cmap)
-	# cb = fig.colorbar(im)
-	# tx = ax.set_title('Frame 0')
 
-	# def updatefig(i):
-	# 	highWay.step()
-	# 	speeds = highWay.get_speeds()
-	# 	# vmax = np.max(speeds)
-	# 	# vmin = np.min(speeds)
-	# 	im.set_array(speeds)
-	# 	# im.set_data(speeds)
-	# 	# im.set_clim(vmin, vmax)
-	# 	# tx.set_text('Frame {0}'.format(i))
-	# 	return im,
-	#
-	# ani = animation.FuncAnimation(fig, updatefig, interval=200, blit=True)
-	#
-	# plt.show()
-
-<<<<<<< HEAD
 def Speed_visualisation_over_time(lanes, length, density, v_max, timesteps):
+	''' Visualize the speed of cars during a simulation
+	'''
 	highWay = HighWay(lanes, length, density, v_max)
 	highWay.run(10)
 	speedmatrix = np.zeros((lanes*timesteps, length))
@@ -430,34 +407,30 @@ def Speed_visualisation_over_time(lanes, length, density, v_max, timesteps):
 	plt.colorbar()
 	plt.show()
 
-
-
-if __name__ == "__main__":
-
-	lanes, length, iterations, density, v_max, timesteps = 2, 250, 100, 0.5, 2, 125
-
-	Speed_visualisation_over_time(lanes, length, density, v_max, timesteps)
-
-	# animate_simulation(lanes, length, density, v_max)
-=======
 def analyze_phases(lanes, length, new_car_probability, v_max):
+	''' Try to find different phases in the behaviour of cars
+		Computes the average speed per cross section of the road and then tries
+		to find clusters
+	'''
 	highWay = HighWay(lanes, length, new_car_probability, v_max)
 	total_time = 500
 	highWay.run(500)
 	jam_evolution = []
-	for t in range(total_time):
+	for t in tqdm(range(total_time)):
 		highWay.run(1)
 		avg_speeds = highWay.get_avg_speed_per_meter()
-		local_clusters = find_local_clusters(avg_speeds, 0.5, 1.5, 2)
+		local_clusters = find_local_clusters(avg_speeds, 0.0, 0.5, 1)
 
 		jam_evolution.append(local_clusters)
 	plt.imshow(np.transpose(jam_evolution))
 	plt.xlabel('time')
 	plt.ylabel('position')
-	plt.title('Synchronized flow, $p = $' + str(new_car_probability))
+	plt.title('Wide moving jam, $p = $' + str(new_car_probability))
 	plt.show()
 
 def find_local_clusters(speeds, min, max, res_val):
+	''' Find local clusters depending on some min and max speed
+	'''
 	res = []
 	length = len(speeds)
 	for i in range(length):
@@ -476,14 +449,11 @@ if __name__ == "__main__":
 	#lanes, length, iterations, density, v_max = 2, 40, 100, 0.75, 2
 	#animate_simulation(lanes, length, density, v_max)
 
-	lanes, length, iterations, new_car_probability, v_max = 3, 500, 100, 0.55, 5
-	highWay = HighWay(lanes, length, new_car_probability, v_max)
+	lanes, length, iterations, new_car_probability, v_max = 3, 500, 100, 0.7, 5
+	# highWay = HighWay(lanes, length, new_car_probability, v_max)
 	analyze_phases(lanes, length,  new_car_probability, v_max)
 	# evolution_visualization(highWay)
->>>>>>> b04fb65e7e392f686115878ecabda1916829c1a6
 	'''Please note that the following functions migth take 15 minutes to run!!
 	'''
-
-
 	# Analyze_diferrent_speeds(lanes, length, iterations, 3, 10, precision = 5)
 	# Analyze_different_lanes(length, iterations, v_max, 2, 5, precision = 5)
