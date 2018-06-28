@@ -118,7 +118,7 @@ class HighWay:
 		for i in self.on_ramps:
 			if self.road[0,i].__class__.__name__ is not 'Car' and random.random() < self.new_car_probability:
 				new_car = Car(0,i)
-				new_car.v = int(self.v_max/4)
+				new_car.v = int(self.v_max/3)
 				self.cars.append(new_car)
 				self.road[0,i] = new_car
 
