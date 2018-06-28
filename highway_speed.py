@@ -412,6 +412,34 @@ def animate_simulation(lanes, length, density, v_max):
 	#
 	# plt.show()
 
+<<<<<<< HEAD
+def Speed_visualisation_over_time(lanes, length, density, v_max, timesteps):
+	highWay = HighWay(lanes, length, density, v_max)
+	highWay.run(10)
+	speedmatrix = np.zeros((lanes*timesteps, length))
+
+	for i in range(timesteps):
+		highWay.step()
+		speed = highWay.get_speeds()
+
+		speedmatrix[lanes*i:lanes*i+lanes, 0:length] = speed
+
+	plt.imshow(speedmatrix)
+	plt.xlabel("Location highway")
+	plt.ylabel("Iterations")
+	plt.colorbar()
+	plt.show()
+
+
+
+if __name__ == "__main__":
+
+	lanes, length, iterations, density, v_max, timesteps = 2, 250, 100, 0.5, 2, 125
+
+	Speed_visualisation_over_time(lanes, length, density, v_max, timesteps)
+
+	# animate_simulation(lanes, length, density, v_max)
+=======
 def analyze_phases(lanes, length, new_car_probability, v_max):
 	highWay = HighWay(lanes, length, new_car_probability, v_max)
 	total_time = 500
@@ -452,6 +480,7 @@ if __name__ == "__main__":
 	highWay = HighWay(lanes, length, new_car_probability, v_max)
 	analyze_phases(lanes, length,  new_car_probability, v_max)
 	# evolution_visualization(highWay)
+>>>>>>> b04fb65e7e392f686115878ecabda1916829c1a6
 	'''Please note that the following functions migth take 15 minutes to run!!
 	'''
 
